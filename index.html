@@ -265,6 +265,65 @@
       top: 50%;
       transform: translateY(-50%);
     }
+
+    /* ─── Reaction HUD ──────────────────────────── */
+    #reaction-hud {
+      position: fixed;
+      bottom: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 50;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #reaction-hud.visible {
+      opacity: 1;
+    }
+    .reaction-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: rgba(10, 10, 20, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 5px 8px 4px;
+      backdrop-filter: blur(6px);
+    }
+    .reaction-emoji {
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+    .reaction-key {
+      font-size: 0.6rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+
+    /* Floating emoji that pops up on screen when you react */
+    .reaction-feedback {
+      position: fixed;
+      left: 50%;
+      bottom: 38%;
+      transform: translateX(-50%);
+      font-size: 3rem;
+      pointer-events: none;
+      z-index: 55;
+      animation: reactionFloat 2s ease-out forwards;
+    }
+    @keyframes reactionFloat {
+      0%   { opacity: 1;   transform: translateX(-50%) translateY(0)    scale(1); }
+      20%  { opacity: 1;   transform: translateX(-50%) translateY(-10px) scale(1.2); }
+      100% { opacity: 0;   transform: translateX(-50%) translateY(-80px) scale(0.8); }
+    }
   </style>
 </head>
 <body>
@@ -286,6 +345,13 @@
   </div>
 
   <div id="crosshair"></div>
+  <div id="reaction-hud">
+    <div class="reaction-item"><span class="reaction-emoji">😂</span><span class="reaction-key">1</span></div>
+    <div class="reaction-item"><span class="reaction-emoji">👍</span><span class="reaction-key">2</span></div>
+    <div class="reaction-item"><span class="reaction-emoji">🔥</span><span class="reaction-key">3</span></div>
+    <div class="reaction-item"><span class="reaction-emoji">🤖</span><span class="reaction-key">4</span></div>
+    <div class="reaction-item"><span class="reaction-emoji">😍</span><span class="reaction-key">5</span></div>
+  </div>
   <div id="hud">WASD / Arrows to move · Mouse to look · ESC to unlock</div>
 
   <!-- Lobby: shown first, hidden once user submits -->

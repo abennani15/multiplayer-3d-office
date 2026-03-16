@@ -48,6 +48,14 @@ wss.on('connection', (ws) => {
             player.z = Number(msg.z) || 0;
             broadcast(id, { type: 'playerMoved', id, x: player.x, y: player.y, z: player.z });
         }
+
+        if (msg.type === 'reaction') {
+            const player = players.get(id);
+            if (!player) return;
+            const allowed = ['😂', '👍🏻', '🔥', '🤖', '😍'];
+            if (!allowed.includes(msg.emoji)) return;
+            broadcast(id, { type: 'reaction', id, emoji: msg.emoji });
+        }
     });
 
     ws.on('close', () => {

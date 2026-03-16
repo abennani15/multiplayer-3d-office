@@ -14,7 +14,7 @@ import { setupRevealFrame, updateRevealFrame } from './scenes/revealFrame.js';
 import { SPAWN_POS, AMBIENT_INTENSITY, DIR_LIGHT_INTENSITY, ROOM_WIDTH, ROOM_DEPTH, ROOM_HEIGHT } from './utils/constants.js';
 import { addBoxCollider } from './utils/collision.js';
 import { showLobby } from './lobby.js';
-import { initMultiplayer, updateMultiplayer } from './multiplayer.js';
+import { initMultiplayer, updateMultiplayer, sendReaction, showLocalReaction, updateReactions } from './multiplayer.js';
 
 // ── Renderer ──
 const renderer = new THREE.WebGLRenderer({
@@ -220,6 +220,37 @@ scene.add(controls.getObject());
 // ── Multiplayer ──
 initMultiplayer(scene, camera, { name: playerName, character: playerCharacter });
 
+// ── Reactions ──
+const REACTION_EMOJIS = ['😂', '👍🏻', '🔥', '🤖', '😍'];
+let _reactionCooldownEnd = 0;
+
+const reactionHud = document.getElementById('reaction-hud');
+
+// Show HUD when pointer is locked, hide when unlocked
+controls.addEventListener('lock',   () => reactionHud.classList.add('visible'));
+controls.addEventListener('unlock', () => reactionHud.classList.remove('visible'));
+
+document.addEventListener('keydown', (e) => {
+    if (!controls.isLocked) return;
+    const idx = parseInt(e.key, 10) - 1;
+    if (idx < 0 || idx > 4) return;
+
+    const now = Date.now();
+    if (now < _reactionCooldownEnd) return; // spam guard: 2 s cooldown
+    _reactionCooldownEnd = now + 2000;
+
+    const emoji = REACTION_EMOJIS[idx];
+    sendReaction(emoji);
+    showLocalReaction(emoji, camera);
+
+    // DOM feedback: floating emoji on screen for local player
+    const el = document.createElement('div');
+    el.className   = 'reaction-feedback';
+    el.textContent = emoji;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+});
+
 // Reveal the pointer-lock overlay now that the lobby is done
 document.getElementById('overlay').classList.remove('pre-lobby');
 
@@ -257,6 +288,9 @@ function animate() {
 
     // Sync multiplayer positions
     updateMultiplayer(camera, delta);
+
+    // Animate reaction emojis
+    updateReactions(delta);
 
     // Animate scene elements
     animateDecorations(decorations, elapsed);

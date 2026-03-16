@@ -11,6 +11,11 @@ const CHARACTER_CONFIGS = {
 // Height (world units) at which the name label floats above the floor
 const LABEL_HEIGHT = 2.3;
 
+// Reactions
+const REACTION_HEIGHT   = 3.4;  // world units above group origin (just above label)
+const REACTION_DURATION = 2.0;  // seconds
+const FLOAT_AMOUNT      = 0.9;  // units to float upward during animation
+
 // Throttle: send at most once per SEND_INTERVAL_MS
 const SEND_INTERVAL_MS = 50; // ~20 fps
 
@@ -20,6 +25,9 @@ let _camera = null;
 
 // Map<id, { group, model, label, targetX, targetZ, prevX, prevZ, faceRotY }>
 const _remotePlayers = new Map();
+
+// Active floating reaction sprites: { sprite, group|null, camera|null, elapsed }
+const _reactions = [];
 
 let _lastSendTime = 0;
 // NaN ensures the very first call always sends, regardless of spawn position
@@ -101,6 +109,61 @@ export function updateMultiplayer(camera, delta) {
 }
 
 // ─────────────────────────────────────────────
+// Reactions
+// ─────────────────────────────────────────────
+
+/** Send a reaction emoji to all other players. */
+export function sendReaction(emoji) {
+    if (!_socket || _socket.readyState !== WebSocket.OPEN) return;
+    _socket.send(JSON.stringify({ type: 'reaction', emoji }));
+}
+
+/**
+ * Show a reaction emoji floating above the local player (camera).
+ * Called immediately when the local player triggers a reaction.
+ */
+export function showLocalReaction(emoji, camera) {
+    _spawnReaction(null, emoji, camera);
+}
+
+/**
+ * Tick all active reaction animations. Call once per frame.
+ */
+export function updateReactions(delta) {
+    for (let i = _reactions.length - 1; i >= 0; i--) {
+        const r = _reactions[i];
+        r.elapsed += delta;
+        const t = Math.min(r.elapsed / REACTION_DURATION, 1);
+        const floatY = t * FLOAT_AMOUNT;
+
+        if (r.camera) {
+            // Local player: sprite follows camera world position
+            r.sprite.position.set(
+                r.camera.position.x,
+                r.camera.position.y + 0.6 + floatY,
+                r.camera.position.z,
+            );
+        } else {
+            r.sprite.position.y = REACTION_HEIGHT + floatY;
+        }
+
+        // Fade out in the second half
+        r.sprite.material.opacity = t > 0.5 ? 1 - (t - 0.5) * 2 : 1;
+
+        if (t >= 1) {
+            if (r.camera) {
+                _scene.remove(r.sprite);
+            } else {
+                r.group.remove(r.sprite);
+            }
+            r.sprite.material.map?.dispose();
+            r.sprite.material.dispose();
+            _reactions.splice(i, 1);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────
 // Message handlers
 // ─────────────────────────────────────────────
 
@@ -120,6 +183,11 @@ function _handleMessage(msg) {
         case 'playerLeft':
             _removeRemotePlayer(msg.id);
             break;
+        case 'reaction': {
+            const player = _remotePlayers.get(msg.id);
+            if (player) _spawnReaction(player.group, msg.emoji, null);
+            break;
+        }
     }
 }
 
@@ -356,4 +424,45 @@ function _createNameLabel(name) {
     const sprite = new THREE.Sprite(material);
     sprite.scale.set(isAdmin ? 2.2 : 1.8, 0.45, 1);
     return sprite;
+}
+
+// ─────────────────────────────────────────────
+// Reaction helpers (private)
+// ─────────────────────────────────────────────
+
+/**
+ * Spawn a floating emoji sprite.
+ * - group + no camera → parented to a remote player group
+ * - no group + camera → added to scene, tracks local camera
+ */
+function _spawnReaction(group, emoji, camera) {
+    const W = 128, H = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.font         = '84px serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, W / 2, H / 2 + 4);
+
+    const texture  = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({
+        map:         texture,
+        depthTest:   false,
+        transparent: true,
+        opacity:     1,
+    });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(0.75, 0.75, 1);
+
+    if (camera) {
+        sprite.position.set(camera.position.x, camera.position.y + 0.6, camera.position.z);
+        _scene.add(sprite);
+        _reactions.push({ sprite, group: null, camera, elapsed: 0 });
+    } else {
+        sprite.position.set(0, REACTION_HEIGHT, 0);
+        group.add(sprite);
+        _reactions.push({ sprite, group, camera: null, elapsed: 0 });
+    }
 }
