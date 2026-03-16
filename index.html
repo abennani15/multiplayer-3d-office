@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpherePx Office</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+
+    /* Overlay / Click-to-enter prompt */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      cursor: pointer;
+      transition: opacity 0.5s ease;
+    }
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #overlay h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+    #overlay p {
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+    }
+    #overlay .keys {
+      margin-top: 2rem;
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    #overlay .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    #overlay .key.wide {
+      width: auto;
+      padding: 0 16px;
+    }
+
+    /* HUD */
+    #hud {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.4);
+      font-size: 0.8rem;
+      z-index: 50;
+      pointer-events: none;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── Lobby ─────────────────────────────────── */
+    #lobby {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #1a1040 0%, #0d0d1a 100%);
+      z-index: 200;
+      transition: opacity 0.4s ease;
+    }
+    #lobby.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .lobby-box {
+      width: min(480px, 92vw);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 2.5rem 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+      backdrop-filter: blur(12px);
+    }
+
+    .lobby-box h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+      text-align: center;
+    }
+    .lobby-box .subtitle {
+      color: rgba(255,255,255,0.45);
+      font-size: 0.9rem;
+      text-align: center;
+      margin-top: -1.2rem;
+      letter-spacing: 0.04em;
+    }
+
+    .lobby-section label {
+      display: block;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .lobby-section input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .lobby-section input:focus {
+      border-color: #667eea;
+    }
+    .lobby-section input::placeholder {
+      color: rgba(255,255,255,0.2);
+    }
+
+    .character-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .character-card {
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 1.2rem 0.8rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.7rem;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .character-card:hover {
+      border-color: rgba(102, 126, 234, 0.5);
+      background: rgba(102, 126, 234, 0.07);
+    }
+    .character-card.selected {
+      border-color: #667eea;
+      background: rgba(102, 126, 234, 0.12);
+    }
+    .char-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+    .char-avatar.casual  { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .char-avatar.business { background: linear-gradient(135deg, #2d3561, #a5b4fc); }
+    .character-card span {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    #enter-btn {
+      width: 100%;
+      padding: 0.8rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    #enter-btn:hover:not(:disabled) {
+      opacity: 0.88;
+      transform: translateY(-1px);
+    }
+    #enter-btn:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    /* Overlay only visible after lobby */
+    #overlay.pre-lobby {
+      display: none;
+    }
+
+    #crosshair {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #crosshair.visible {
+      opacity: 0.5;
+    }
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: white;
+    }
+    #crosshair::before {
+      width: 2px;
+      height: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    #crosshair::after {
+      height: 2px;
+      width: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="overlay" class="pre-lobby">
+    <h1>SpherePx Office</h1>
+    <p>Click anywhere to enter the office</p>
+    <div class="keys">
+      <span class="key">W</span>
+      <span class="key">A</span>
+      <span class="key">S</span>
+      <span class="key">D</span>
+      <span style="color: rgba(255,255,255,0.3); margin: 0 8px;">or</span>
+      <span class="key">↑</span>
+      <span class="key">←</span>
+      <span class="key">↓</span>
+      <span class="key">→</span>
+    </div>
+  </div>
+
+  <div id="crosshair"></div>
+  <div id="hud">WASD / Arrows to move · Mouse to look · ESC to unlock</div>
+
+  <!-- Lobby: shown first, hidden once user submits -->
+  <div id="lobby">
+    <div class="lobby-box">
+      <h1>SpherePx Office</h1>
+      <p class="subtitle">Multiplayer demo — choose your identity</p>
+
+      <div class="lobby-section">
+        <label for="player-name">Your name</label>
+        <input id="player-name" type="text" placeholder="Enter your name..." maxlength="32" autocomplete="off">
+      </div>
+
+      <div class="lobby-section">
+        <label>Character</label>
+        <div class="character-grid">
+          <div class="character-card" data-char="male_character_7">
+            <div class="char-avatar casual">🧑</div>
+            <span>Casual</span>
+          </div>
+          <div class="character-card" data-char="man_in_suit">
+            <div class="char-avatar business">🕴️</div>
+            <span>Business</span>
+          </div>
+        </div>
+      </div>
+
+      <button id="enter-btn" disabled>Enter Office</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

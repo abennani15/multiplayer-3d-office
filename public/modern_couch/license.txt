@@ -1,0 +1,11 @@
+Model Information:
+* title:	Modern Couch
+* source:	https://sketchfab.com/3d-models/modern-couch-4ba116c285cd451cb525829703fda3ab
+* author:	lumoize (https://sketchfab.com/lumoize)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Modern Couch" (https://sketchfab.com/3d-models/modern-couch-4ba116c285cd451cb525829703fda3ab) by lumoize (https://sketchfab.com/lumoize) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

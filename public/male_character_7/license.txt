@@ -1,0 +1,11 @@
+Model Information:
+* title:	male character #7
+* source:	https://sketchfab.com/3d-models/male-character-7-2fd1b58a6553457e8e742411fe0c3030
+* author:	BELAZ (https://sketchfab.com/asset_for_games)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "male character #7" (https://sketchfab.com/3d-models/male-character-7-2fd1b58a6553457e8e742411fe0c3030) by BELAZ (https://sketchfab.com/asset_for_games) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

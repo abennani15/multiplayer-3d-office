@@ -1,0 +1,24 @@
+{
+  "name": "demo0-17",
+  "version": "1.0.0",
+  "description": "demo for v0.17",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server.js",
+    "start": "node server.js & vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "author": "a.bennani",
+  "license": "ISC",
+  "dependencies": {
+    "postprocessing": "^6.36.4",
+    "three": "^0.170.0",
+    "troika-three-text": "^0.52.3",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0"
+  }
+}
